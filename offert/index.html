@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Begär offert på bygglovsritningar, markarbete & husgrund | KMX Entreprenad</title>
+
+    <meta name="description"
+        content="Begär offert från KMX Entreprenad för bygglovsritningar, projektering, markarbeten, husgrunder, VA, dränering och projektledning.">
+
+    <link rel="stylesheet" href="../style.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.ico">
+</head>
+
+<body class="offert-page">
+
+<nav class="navbar scrolled" id="navbar">
+
+    <a href="../" class="logo">
+        <img src="../Images/logo.png" alt="KMX Entreprenad">
+    </a>
+
+    <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <ul class="nav-links" id="navLinks">
+
+        <li><a href="../#home">Hem</a></li>
+        <li><a href="../#about">Om oss</a></li>
+        <li><a href="../#services">Tjänster</a></li>
+        <li><a href="../projekt/">Projekt</a></li>
+        <li><a href="../#contact">Kontakt</a></li>
+
+        <li>
+            <a href="./" class="nav-offert">
+                Begär offert
+            </a>
+        </li>
+
+    </ul>
+
+</nav>
+
+<section class="quote-page">
+
+<div class="container">
+
+<div class="section-title">
+
+<h1>Begär offert</h1>
+
+<p>
+Beskriv vad du vill göra så återkommer vi med nästa steg. Du kan fråga om en enskild tjänst eller en helhetslösning med ritningar, markarbete, grund och samordning.
+</p>
+
+</div>
+
+<form class="quote-form" id="quote-form" action="/api/offert" method="post" enctype="multipart/form-data">
+
+<div class="form-row">
+
+<div class="form-group">
+<label>Namn *</label>
+<input type="text" name="name" id="name" required>
+</div>
+
+<div class="form-group">
+<label>Telefon *</label>
+<input type="tel" name="phone" id="phone" required>
+</div>
+
+</div>
+
+<div class="form-row">
+
+<div class="form-group">
+<label>E-post *</label>
+<input type="email" name="email" id="email" autocomplete="email" required>
+</div>
+
+<div class="form-group">
+<label>Adress</label>
+<input type="text" name="address" id="address" autocomplete="street-address">
+</div>
+
+</div>
+
+<div class="form-group">
+
+<label>Typ av arbete *</label>
+
+<select name="service" id="service" required>
+<option value="">Välj tjänst...</option>
+<option>Helhetslösning - ritning, mark och samordning</option>
+<option>Bygglovsritningar</option>
+<option>Projektering och ritningsunderlag</option>
+<option>Markarbeten</option>
+<option>Husgrund eller garagegrund</option>
+<option>VA-arbeten</option>
+<option>Dränering</option>
+<option>Grävning</option>
+<option>Masshantering</option>
+<option>Projektledning eller entreprenörssamordning</option>
+<option>Annat</option>
+</select>
+
+</div>
+
+<div class="form-row">
+
+<div class="form-group">
+
+<label>Ungefärlig projektstorlek</label>
+
+<select name="projectSize" id="projectSize">
+<option>Litet projekt</option>
+<option>Medelstort projekt</option>
+<option>Stort projekt</option>
+</select>
+
+</div>
+
+<div class="form-group">
+
+<label>Önskad byggstart</label>
+
+<input type="date" name="startDate" id="startDate">
+
+</div>
+
+</div>
+
+<div class="form-group">
+
+<label>Beskriv ditt projekt *</label>
+
+<textarea
+rows="8"
+name="description"
+id="description"
+placeholder="Beskriv vad du vill bygga eller få hjälp med, ungefärliga mått, plats, om bygglov behövs och om du redan har bilder eller ritningar."
+required></textarea>
+
+</div>
+
+<div class="form-group">
+
+<label>Bifoga bilder eller ritningar</label>
+
+<input
+type="file"
+name="attachments"
+id="attachments"
+multiple
+accept="image/*,.pdf">
+
+</div>
+
+<input type="text" name="website" id="website" tabindex="-1" autocomplete="off" hidden>
+
+<div class="form-check">
+
+<label>
+<input type="checkbox" name="consent" id="consent" value="yes" required>
+Jag godkänner att KMX Entreprenad behandlar mina uppgifter för att kunna besvara min offertförfrågan.
+</label>
+
+</div>
+
+<p id="form-status" aria-live="polite" style="margin-top: 12px; color: #1f6f3d; font-weight: 600;"></p>
+
+<button
+type="submit"
+class="btn">
+Skicka offertförfrågan
+</button>
+
+</form>
+
+</div>
+
+</section>
+
+<footer>
+<p>© 2026 KMX Entreprenad</p>
+</footer>
+
+<script src="../script.js?v=20260729-1"></script>
+
+</body>
+</html>

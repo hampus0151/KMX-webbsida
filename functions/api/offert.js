@@ -97,67 +97,43 @@ export async function onRequestPost(context) {
             </div>
         `;
 
-        const mailPayload = {
-            personalizations: [
-                {
-                    to: [
-                        {
-                            email: env.MAIL_TO || DEFAULT_MAIL_TO,
-                            name: "KMX Entreprenad"
-                        }
-                    ]
-                }
-            ],
-            from: {
-                email: env.MAIL_FROM || DEFAULT_MAIL_FROM,
-                name: "KMX Entreprenad"
-            },
-            reply_to: {
-                email: submission.email,
-                name: submission.name
-            },
-            subject,
-            content: [
-                {
-                    type: "text/plain",
-                    value: plainTextMessage
-                },
-                {
-                    type: "text/html",
-                    value: htmlMessage
-                }
-            ]
-        };
-
-        if (attachments.length > 0) {
-            mailPayload.attachments = attachments.map(({ content, filename, type }) => ({
-                content,
-                filename,
-                type,
-                disposition: "attachment"
-            }));
-        }
-
-        if (!env.MAILCHANNELS_API_KEY) {
-            console.error("MAILCHANNELS_API_KEY is not configured.");
+        if (!env.RESEND_API_KEY) {
+            console.error("RESEND_API_KEY is not configured.");
             return jsonResponse({
                 success: false,
                 message: "Mejltjänsten är inte konfigurerad ännu. Försök igen senare."
             }, 503);
         }
 
-        const mailResponse = await fetch("https://api.mailchannels.net/tx/v1/send", {
+        const resendPayload = {
+            from: env.MAIL_FROM || DEFAULT_MAIL_FROM,
+            to: [env.MAIL_TO || DEFAULT_MAIL_TO],
+            reply_to: submission.email,
+            subject,
+            text: plainTextMessage,
+            html: htmlMessage
+        };
+
+        if (attachments.length > 0) {
+            resendPayload.attachments = attachments.map(({ content, filename, type }) => ({
+                content,
+                filename,
+                content_type: type
+            }));
+        }
+
+        const mailResponse = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
                 "content-type": "application/json",
-                "X-Api-Key": env.MAILCHANNELS_API_KEY
+                "Authorization": `Bearer ${env.RESEND_API_KEY}`
             },
-            body: JSON.stringify(mailPayload)
+            body: JSON.stringify(resendPayload)
         });
 
         if (!mailResponse.ok) {
             const errorText = await mailResponse.text();
-            console.error("MailChannels error:", errorText);
+            console.error("Resend error:", errorText);
 
             return jsonResponse({
                 success: false,

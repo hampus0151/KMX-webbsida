@@ -75,6 +75,39 @@ window.addEventListener("resize", () => {
 
 });
 
+// Expandable details for the service cards.
+document.querySelectorAll("#services .service-card").forEach((card) => {
+
+    const toggle = card.querySelector(".service-more");
+    const details = card.querySelector(".service-details");
+    const servicesHeading = document.querySelector("#services .section-title");
+
+    if (!toggle || !details) {
+        return;
+    }
+
+    toggle.addEventListener("click", () => {
+
+        const isExpanded = card.classList.toggle("is-expanded");
+        toggle.setAttribute("aria-expanded", String(isExpanded));
+        toggle.textContent = isExpanded ? "Visa mindre" : "Läs mer";
+        details.setAttribute("aria-hidden", String(!isExpanded));
+
+        window.setTimeout(() => {
+            const scrollTarget = window.matchMedia("(max-width: 768px)").matches
+                ? card
+                : (servicesHeading || card);
+
+            scrollTarget.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }, 300);
+
+    });
+
+});
+
 // ===============================
 // Skicka offertförfrågan i bakgrunden
 // ===============================

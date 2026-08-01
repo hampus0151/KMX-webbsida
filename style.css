@@ -1126,6 +1126,84 @@ body.lightbox-open{
 
 }
 
+.form-help{
+
+    margin:0 0 10px;
+
+    color:#666;
+
+    font-size:14px;
+
+    line-height:1.5;
+
+}
+
+.quote-form-note{
+
+    margin:14px 0 0;
+
+    text-align:center;
+
+}
+
+.file-upload{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    flex-wrap:wrap;
+
+}
+
+.file-upload-button{
+
+    display:inline-block;
+
+    padding:12px 22px;
+
+    border-radius:8px;
+
+    background:#d4a24c;
+
+    color:white;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.file-upload-button:hover{
+
+    background:#bf8d39;
+
+}
+
+.file-upload-names{
+
+    color:#666;
+
+    font-size:14px;
+
+}
+
+.file-upload-input{
+
+    position:absolute;
+
+    width:1px;
+
+    height:1px;
+
+    opacity:0;
+
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea{

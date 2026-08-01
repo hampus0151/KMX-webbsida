@@ -1,8 +1,9 @@
 const DEFAULT_MAIL_TO = "kmxentreprenad@gmail.com";
 const DEFAULT_MAIL_FROM = "info@kmxentreprenad.se";
-const MAX_ATTACHMENTS = 5;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const MAX_TOTAL_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_ATTACHMENTS = 10;
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const MAX_TOTAL_UPLOAD_BYTES = 60 * 1024 * 1024;
+const MAX_EMAIL_ATTACHMENT_BYTES = 38 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
     "application/pdf",
     "image/jpeg",
@@ -43,9 +44,8 @@ export async function onRequestPost(context) {
         }
 
         const attachments = await prepareAttachments(formData.getAll("attachments"));
-        const attachmentsSummary = attachments.length
-            ? attachments.map((file) => `${file.filename} (${formatBytes(file.size)})`).join("\n")
-            : "Inga bilagor";
+        const attachmentBatches = createAttachmentBatches(attachments);
+        const attachmentsSummary = "__ATTACHMENTS_SUMMARY__";
 
         const subject = `Ny offertförfrågan - ${submission.name}`;
         const plainTextMessage = [
@@ -105,40 +105,54 @@ export async function onRequestPost(context) {
             }, 503);
         }
 
-        const resendPayload = {
-            from: env.MAIL_FROM || DEFAULT_MAIL_FROM,
-            to: [env.MAIL_TO || DEFAULT_MAIL_TO],
-            reply_to: submission.email,
-            subject,
-            text: plainTextMessage,
-            html: htmlMessage
-        };
+        for (let batchIndex = 0; batchIndex < attachmentBatches.length; batchIndex += 1) {
+            const batch = attachmentBatches[batchIndex];
+            const batchSummary = batch.length
+                ? batch.map((file) => `${file.filename} (${formatBytes(file.size)})`).join("\n")
+                : "Inga bilagor";
+            const batchSubject = attachmentBatches.length > 1
+                ? `${subject} (bilagor ${batchIndex + 1} av ${attachmentBatches.length})`
+                : subject;
+            const batchPlainTextMessage = plainTextMessage.replace(attachmentsSummary, batchSummary);
+            const batchHtmlMessage = htmlMessage.replace(
+                attachmentsSummary,
+                escapeHtml(batchSummary).replace(/\n/g, "<br>")
+            );
+            const resendPayload = {
+                from: env.MAIL_FROM || DEFAULT_MAIL_FROM,
+                to: [env.MAIL_TO || DEFAULT_MAIL_TO],
+                reply_to: submission.email,
+                subject: batchSubject,
+                text: batchPlainTextMessage,
+                html: batchHtmlMessage
+            };
 
-        if (attachments.length > 0) {
-            resendPayload.attachments = attachments.map(({ content, filename, type }) => ({
-                content,
-                filename,
-                content_type: type
-            }));
-        }
+            if (batch.length > 0) {
+                resendPayload.attachments = batch.map(({ content, filename, type }) => ({
+                    content,
+                    filename,
+                    content_type: type
+                }));
+            }
 
-        const mailResponse = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                "Authorization": `Bearer ${env.RESEND_API_KEY}`
-            },
-            body: JSON.stringify(resendPayload)
-        });
+            const mailResponse = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    "Authorization": `Bearer ${env.RESEND_API_KEY}`
+                },
+                body: JSON.stringify(resendPayload)
+            });
 
-        if (!mailResponse.ok) {
-            const errorText = await mailResponse.text();
-            console.error("Resend error:", errorText);
+            if (!mailResponse.ok) {
+                const errorText = await mailResponse.text();
+                console.error("Resend error:", errorText);
 
-            return jsonResponse({
-                success: false,
-                message: "Kunde inte skicka offertförfrågan just nu. Försök igen om en stund."
-            }, 502);
+                return jsonResponse({
+                    success: false,
+                    message: "Kunde inte skicka offertförfrågan just nu. Försök igen om en stund."
+                }, 502);
+            }
         }
 
         return jsonResponse({ success: true }, 200);
@@ -194,18 +208,18 @@ async function prepareAttachments(files) {
         throw createUserError(`Max ${MAX_ATTACHMENTS} bilagor per offertförfrågan.`);
     }
 
-    let totalSize = 0;
     const attachments = [];
+    let totalUploadSize = 0;
 
     for (const file of uploadedFiles) {
-        totalSize += file.size;
+        totalUploadSize += file.size;
 
         if (file.size > MAX_FILE_SIZE_BYTES) {
             throw createUserError(`Filen ${file.name} är för stor. Maxstorlek per fil är ${formatBytes(MAX_FILE_SIZE_BYTES)}.`);
         }
 
-        if (totalSize > MAX_TOTAL_FILE_SIZE_BYTES) {
-            throw createUserError(`Bilagorna är för stora tillsammans. Total maxstorlek är ${formatBytes(MAX_TOTAL_FILE_SIZE_BYTES)}.`);
+        if (totalUploadSize > MAX_TOTAL_UPLOAD_BYTES) {
+            throw createUserError(`Bilagorna är för stora tillsammans. Max total uppladdning är ${formatBytes(MAX_TOTAL_UPLOAD_BYTES)}.`);
         }
 
         const mimeType = getMimeType(file);
@@ -225,6 +239,29 @@ async function prepareAttachments(files) {
     }
 
     return attachments;
+}
+
+function createAttachmentBatches(attachments) {
+    const batches = [[]];
+    let currentBatchSize = 0;
+
+    for (const attachment of attachments) {
+        const encodedSize = attachment.content.length;
+
+        if (encodedSize > MAX_EMAIL_ATTACHMENT_BYTES) {
+            throw createUserError(`Bilagan ${attachment.filename} är för stor för att skickas via e-post.`);
+        }
+
+        if (currentBatchSize > 0 && currentBatchSize + encodedSize > MAX_EMAIL_ATTACHMENT_BYTES) {
+            batches.push([]);
+            currentBatchSize = 0;
+        }
+
+        batches[batches.length - 1].push(attachment);
+        currentBatchSize += encodedSize;
+    }
+
+    return batches;
 }
 
 function createUserError(message) {

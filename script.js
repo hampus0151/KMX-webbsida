@@ -115,6 +115,23 @@ document.querySelectorAll("#services .service-card").forEach((card) => {
 const quoteForm = document.getElementById("quote-form");
 const formStatus = document.getElementById("form-status");
 const quoteSubmitButton = quoteForm ? quoteForm.querySelector('button[type="submit"]') : null;
+const attachmentInput = document.getElementById("attachments");
+const attachmentFileNames = document.getElementById("attachment-file-names");
+const maxClientFileSize = 25 * 1024 * 1024;
+const maxClientTotalUploadSize = 60 * 1024 * 1024;
+
+if (attachmentInput && attachmentFileNames) {
+
+    attachmentInput.addEventListener("change", () => {
+
+        const files = Array.from(attachmentInput.files || []);
+        attachmentFileNames.textContent = files.length
+            ? `${files.length} ${files.length === 1 ? "fil" : "filer"} valda`
+            : "Inga filer valda";
+
+    });
+
+}
 
 if (quoteForm) {
 
@@ -133,6 +150,25 @@ if (quoteForm) {
         }
 
         const formData = new FormData(quoteForm);
+        const selectedFiles = Array.from(attachmentInput?.files || []);
+        const oversizedFile = selectedFiles.find((file) => file.size > maxClientFileSize);
+        const totalUploadSize = selectedFiles.reduce((total, file) => total + file.size, 0);
+
+        if (oversizedFile || totalUploadSize > maxClientTotalUploadSize) {
+            if (formStatus) {
+                formStatus.textContent = oversizedFile
+                    ? `Filen ${oversizedFile.name} är större än 25 MB.`
+                    : "Bilagorna är större än den sammanlagda gränsen på 60 MB.";
+                formStatus.style.color = "#8a4b00";
+            }
+
+            if (quoteSubmitButton) {
+                quoteSubmitButton.disabled = false;
+                quoteSubmitButton.textContent = "Skicka offertförfrågan";
+            }
+
+            return;
+        }
 
         try {
             const response = await fetch("/api/offert", {
@@ -160,7 +196,10 @@ if (quoteForm) {
                 }
             } else {
                 if (formStatus) {
-                    formStatus.textContent = data.message || "Kunde inte skicka offertförfrågan just nu. Försök igen om en stund.";
+                    const isLocalServer = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+                    formStatus.textContent = data.message || (isLocalServer
+                        ? "Formuläret kan inte skicka via Live Server. Öppna webbplatsen via Cloudflare eller kör Worker lokalt."
+                        : "Kunde inte skicka offertförfrågan just nu. Försök igen om en stund.");
                     formStatus.style.color = "#8a4b00";
                 }
             }

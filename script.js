@@ -146,3 +146,146 @@ if (quoteForm) {
     });
 
 }
+
+// ===============================
+// Lightbox för projektbilder
+// ===============================
+
+const projectImages = document.querySelectorAll(".project img");
+
+if (projectImages.length) {
+
+    const lightbox = document.createElement("div");
+    const lightboxImage = document.createElement("img");
+    const closeButton = document.createElement("button");
+    const previousButton = document.createElement("button");
+    const nextButton = document.createElement("button");
+    let currentImageIndex = 0;
+
+    lightbox.className = "lightbox";
+    lightbox.setAttribute("role", "dialog");
+    lightbox.setAttribute("aria-modal", "true");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightbox.setAttribute("aria-label", "Förstorad projektbild");
+
+    lightboxImage.className = "lightbox-image";
+    lightboxImage.alt = "";
+
+    closeButton.className = "lightbox-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Stäng bildvisare");
+    closeButton.innerHTML = "&times;";
+
+    previousButton.className = "lightbox-previous";
+    previousButton.type = "button";
+    previousButton.setAttribute("aria-label", "Föregående bild");
+    previousButton.innerHTML = "&#8592;";
+
+    nextButton.className = "lightbox-next";
+    nextButton.type = "button";
+    nextButton.setAttribute("aria-label", "Nästa bild");
+    nextButton.innerHTML = "&#8594;";
+
+    lightbox.append(lightboxImage, closeButton, previousButton, nextButton);
+    document.body.appendChild(lightbox);
+
+    let previouslyFocusedElement = null;
+
+    const showImage = (index) => {
+
+        currentImageIndex = (index + projectImages.length) % projectImages.length;
+        const image = projectImages[currentImageIndex];
+        lightboxImage.src = image.currentSrc || image.src;
+        lightboxImage.alt = image.alt;
+
+    };
+
+    const closeLightbox = () => {
+
+        if (lightbox.getAttribute("aria-hidden") === "true") {
+            return;
+        }
+
+        lightbox.classList.remove("is-open");
+        lightbox.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("lightbox-open");
+
+        if (previouslyFocusedElement) {
+            previouslyFocusedElement.focus();
+        }
+
+    };
+
+    const openLightbox = (image) => {
+
+        previouslyFocusedElement = document.activeElement;
+        showImage(Array.from(projectImages).indexOf(image));
+        lightbox.setAttribute("aria-hidden", "false");
+        document.body.classList.add("lightbox-open");
+
+        requestAnimationFrame(() => {
+            lightbox.classList.add("is-open");
+        });
+
+        closeButton.focus();
+
+    };
+
+    projectImages.forEach(image => {
+
+        image.setAttribute("tabindex", "0");
+        image.setAttribute("role", "button");
+        image.setAttribute("aria-label", `${image.alt}. Öppna förstorad bild`);
+
+        image.addEventListener("click", () => openLightbox(image));
+
+        image.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openLightbox(image);
+            }
+        });
+
+    });
+
+    closeButton.addEventListener("click", closeLightbox);
+    previousButton.addEventListener("click", () => showImage(currentImageIndex - 1));
+    nextButton.addEventListener("click", () => showImage(currentImageIndex + 1));
+
+    lightbox.addEventListener("click", event => {
+        if (event.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
+    lightbox.addEventListener("keydown", event => {
+
+        if (event.key === "Escape") {
+            closeLightbox();
+            return;
+        }
+
+        if (event.key === "ArrowLeft") {
+            showImage(currentImageIndex - 1);
+            return;
+        }
+
+        if (event.key === "ArrowRight") {
+            showImage(currentImageIndex + 1);
+            return;
+        }
+
+        if (event.key === "Tab") {
+            const focusableElements = [previousButton, nextButton, closeButton];
+            const currentFocusIndex = focusableElements.indexOf(document.activeElement);
+            const nextFocusIndex = event.shiftKey
+                ? (currentFocusIndex - 1 + focusableElements.length) % focusableElements.length
+                : (currentFocusIndex + 1) % focusableElements.length;
+
+            event.preventDefault();
+            focusableElements[nextFocusIndex].focus();
+        }
+
+    });
+
+}
